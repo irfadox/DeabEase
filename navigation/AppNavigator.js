@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { View, Text, ActivityIndicator } from 'react-native';
-import { Book, Bell, MessageSquare, Bot, Users } from 'lucide-react-native';
+import { Book, Bell, MessageSquare, Users, Settings as SettingsIcon } from 'lucide-react-native';
 import { supabase } from '../utils/supabase';
 
 import DiaryScreen from '../screens/DiaryScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 import RemindersScreen from '../screens/RemindersScreen';
 import ChatScreen from '../screens/ChatScreen';
 import AIScreen from '../screens/AIScreen';
@@ -145,7 +146,7 @@ export default function AppNavigator() {
                 if (route.name === 'Diary') return <Book size={size} color={color} />;
                 if (route.name === 'Reminders') return <Bell size={size} color={color} />;
                 if (route.name === 'Chat') return <MessageSquare size={size} color={color} />;
-                if (route.name === 'Assistant') return <Bot size={size} color={color} />;
+                if (route.name === 'Settings') return <SettingsIcon size={size} color={color} />;
               },
               tabBarActiveTintColor: '#00BFA5',
               tabBarInactiveTintColor: 'gray',
@@ -156,7 +157,7 @@ export default function AppNavigator() {
             <Tab.Screen name="Diary" component={DiaryScreen} options={{ title: 'Дневник' }} />
             <Tab.Screen name="Reminders" component={RemindersScreen} options={{ title: 'Напоминания' }} />
             <Tab.Screen name="Chat" component={ChatScreen} options={{ title: 'Чат' }} />
-            <Tab.Screen name="Assistant" component={AIScreen} options={{ title: 'ИИ Ассистент' }} />
+            <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: 'Настройки' }} />
           </Tab.Navigator>
         )
       ) : (
