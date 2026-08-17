@@ -2,13 +2,7 @@
 
 # DiabEase
 
-DiabEase is a mobile app designed to assist people with diabetes (and their doctors) in tracking health metrics, managing treatment, and staying connected. Patients can log blood sugar levels and meals, set medication reminders, chat with their assigned doctor (including SOS alerts), and get personalized AI advice based on their recent diary data. Doctors can view their patients and communicate directly.
-
-## About Diabetes Management
-
-### Tracking and communication help people with diabetes stay in control of their condition.
-
-DiabEase provides a personal diary for readings and meals, scheduled reminders, and real-time chat with a doctor (plus an SOS button for urgent situations). The app supports both patients and doctors with role-based access.
+DiabEase is a mobile app designed to help people with diabetes and their doctors track health metrics, manage treatment, and stay connected. Patients can log blood sugar levels and meals in a personal diary, set medication reminders, chat directly with their assigned doctor, and send SOS alerts in urgent situations. Doctors can view their patients and communicate with them directly. The app supports both patients and doctors through role-based access.
 
 ## How It Works
 
