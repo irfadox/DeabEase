@@ -3,9 +3,16 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, 
 import { supabase } from '../utils/supabase';
 import { User, ChevronRight, Briefcase } from 'lucide-react-native';
 import { useSettings } from '../context/SettingsContext';
+import { useLanguageContext } from '../context/LanguageContext';
+import LangDoctorSelection from '../lang/LangDoctorSelection';
+import LangCommon from '../lang/LangCommon';
 
 export default function DoctorSelection({ onSelect }) {
   const { getAdjustedFontSize } = useSettings();
+  const { language } = useLanguageContext();
+  const t = LangDoctorSelection[language];
+  const common = LangCommon[language];
+
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,7 +31,7 @@ export default function DoctorSelection({ onSelect }) {
       setDoctors(data || []);
     } catch (e) {
       console.error('Error fetching doctors:', e);
-      Alert.alert('Ошибка', 'Не удалось загрузить список врачей');
+      Alert.alert(common.error, t.errorLoadFailed);
     } finally {
       setLoading(false);
     }
@@ -32,12 +39,12 @@ export default function DoctorSelection({ onSelect }) {
 
   const handleSelect = async (doctor) => {
     Alert.alert(
-      'Выбор врача',
-      `Вы уверены, что хотите назначить ${doctor.full_name} вашим лечащим врачом?`,
+      t.selectTitle,
+      t.selectMessage.replace('{name}', doctor.full_name),
       [
-        { text: 'Отмена', style: 'cancel' },
+        { text: common.cancel, style: 'cancel' },
         { 
-          text: 'Да, назначить', 
+          text: t.confirmSelect, 
           onPress: async () => {
             try {
               const { data: { user } } = await supabase.auth.getUser();
@@ -49,7 +56,7 @@ export default function DoctorSelection({ onSelect }) {
               if (error) throw error;
               onSelect(doctor.id);
             } catch (e) {
-              Alert.alert('Ошибка', 'Не удалось назначить врача');
+              Alert.alert(common.error, t.errorAssignFailed);
             }
           }
         }
@@ -66,7 +73,7 @@ export default function DoctorSelection({ onSelect }) {
         <Text style={[styles.name, { fontSize: getAdjustedFontSize(16) }]}>{item.full_name}</Text>
         <View style={styles.tag}>
           <Briefcase size={12} color="#00BFA5" />
-          <Text style={[styles.tagText, { fontSize: getAdjustedFontSize(12) }]}>{item.affiliation || 'Врач'}</Text>
+          <Text style={[styles.tagText, { fontSize: getAdjustedFontSize(12) }]}>{item.affiliation || t.defaultDoctorTag}</Text>
         </View>
         <Text style={[styles.desc, { fontSize: getAdjustedFontSize(13) }]} numberOfLines={2}>{item.description}</Text>
       </View>
@@ -77,8 +84,8 @@ export default function DoctorSelection({ onSelect }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={[styles.title, { fontSize: getAdjustedFontSize(20) }]}>Выберите лечащего врача</Text>
-        <Text style={[styles.subtitle, { fontSize: getAdjustedFontSize(14) }]}>После выбора вы сможете общаться с врачом в чате и отправлять данные дневника</Text>
+        <Text style={[styles.title, { fontSize: getAdjustedFontSize(20) }]}>{t.title}</Text>
+        <Text style={[styles.subtitle, { fontSize: getAdjustedFontSize(14) }]}>{t.subtitle}</Text>
       </View>
       
       {loading ? (
@@ -90,7 +97,7 @@ export default function DoctorSelection({ onSelect }) {
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
-            <Text style={[styles.emptyText, { fontSize: getAdjustedFontSize(14) }]}>В системе пока нет зарегистрированных врачей</Text>
+            <Text style={[styles.emptyText, { fontSize: getAdjustedFontSize(14) }]}>{t.emptyList}</Text>
           }
         />
       )}

@@ -1,0 +1,43 @@
+export default {
+  ru: {
+    errorPermission: 'Разрешите уведомления для работы напоминаний',
+    errorEmptyText: 'Введите текст напоминания',
+    errorPastTime: 'Время напоминания не может быть в прошлом',
+    notificationTitle: 'DiabEase Напоминание',
+    deleteTitle: 'Удаление',
+    deleteMessage: 'Вы действительно хотите удалить это напоминание?',
+    errorDeleteFailed: 'Не удалось удалить',
+    placeholder: 'О чем напомнить?',
+    addReminder: 'Добавить напоминание',
+    listTitle: 'Ваши напоминания',
+    emptyList: 'Напоминаний пока нет',
+  },
+
+  en: {
+    errorPermission: 'Please allow notifications for reminders to work',
+    errorEmptyText: 'Enter reminder text',
+    errorPastTime: 'Reminder time cannot be in the past',
+    notificationTitle: 'DiabEase Reminder',
+    deleteTitle: 'Delete',
+    deleteMessage: 'Are you sure you want to delete this reminder?',
+    errorDeleteFailed: 'Failed to delete',
+    placeholder: 'What to remind about?',
+    addReminder: 'Add reminder',
+    listTitle: 'Your reminders',
+    emptyList: 'No reminders yet',
+  },
+
+  ky: {
+    errorPermission: 'Эскертмелер иштеши үчүн билдирмелерге уруксат бериңиз',
+    errorEmptyText: 'Эскертменин текстин киргизиңиз',
+    errorPastTime: 'Эскертменин убактысы өткөн убакытта болушу мүмкүн эмес',
+    notificationTitle: 'DiabEase эскертүүсү',
+    deleteTitle: 'Өчүрүү',
+    deleteMessage: 'Бул эскертмени чын эле өчүрөсүзбү?',
+    errorDeleteFailed: 'Өчүрүү мүмкүн болгон жок',
+    placeholder: 'Эмне жөнүндө эскертиш керек?',
+    addReminder: 'Эскертме кошуу',
+    listTitle: 'Сиздин эскертмелериңиз',
+    emptyList: 'Эскертмелер азырынча жок',
+  },
+};

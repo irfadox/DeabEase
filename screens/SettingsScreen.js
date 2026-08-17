@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { Plus, Minus, RotateCcw, Info } from 'lucide-react-native';
 import { useSettings } from '../context/SettingsContext';
+import { useLanguageContext, AVAILABLE_LANGUAGES } from '../context/LanguageContext';
+import LangSettingsScreen from '../lang/LangSettingsScreen';
+import LangCommon from '../lang/LangCommon';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 export default function SettingsScreen({ navigation }) {
   const { 
@@ -12,6 +16,10 @@ export default function SettingsScreen({ navigation }) {
     updateLimits, 
     getAdjustedFontSize 
   } = useSettings();
+
+  const { language, setLanguage } = useLanguageContext();
+  const t = LangSettingsScreen[language];
+  const common = LangCommon[language];
 
   const [minLimit, setMinLimit] = useState(globalMin.toString());
   const [maxLimit, setMaxLimit] = useState(globalMax.toString());
@@ -28,12 +36,12 @@ export default function SettingsScreen({ navigation }) {
     const max = parseFloat(maxLimit);
 
     if (isNaN(min) || isNaN(max)) {
-      Alert.alert('Ошибка', 'Пожалуйста, введите корректные числовые значения для лимитов сахара');
+      Alert.alert(common.error, t.errorInvalidLimits);
       return;
     }
 
     if (min >= max) {
-      Alert.alert('Ошибка', 'Минимальный лимит должен быть меньше максимального');
+      Alert.alert(common.error, t.errorMinMax);
       return;
     }
 
@@ -41,11 +49,11 @@ export default function SettingsScreen({ navigation }) {
       await updateLimits(min, max);
       await updateFontSize(fontSize);
       
-      Alert.alert('Успех', 'Настройки сохранены', [
-        { text: 'OK', onPress: () => navigation.navigate('Diary') }
+      Alert.alert(common.success, t.successSaved, [
+        { text: common.ok, onPress: () => navigation.navigate('Diary') }
       ]);
     } catch (e) {
-      Alert.alert('Ошибка', 'Не удалось сохранить настройки');
+      Alert.alert(common.error, t.errorSaveFailed);
     }
   };
 
@@ -67,22 +75,43 @@ export default function SettingsScreen({ navigation }) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* Language Settings */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { fontSize: getAdjustedFontSize(18) }]}>
+          {t.languageTitle}
+        </Text>
+
+        <View style={styles.infoBox}>
+          <Info size={18} color="#00BFA5" style={styles.infoIcon} />
+          <Text style={[styles.infoText, { fontSize: getAdjustedFontSize(13) }]}>
+            {t.languageInfo}
+          </Text>
+        </View>
+
+        <LanguageSwitcher
+          languages={AVAILABLE_LANGUAGES}
+          language={language}
+          onChange={setLanguage}
+          fontSize={getAdjustedFontSize(14)}
+        />
+      </View>
+
       {/* Target range inputs */}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { fontSize: getAdjustedFontSize(18) }]}>
-          Целевой диапазон сахара
+          {t.targetRangeTitle}
         </Text>
         
         <View style={styles.infoBox}>
           <Info size={18} color="#00BFA5" style={styles.infoIcon} />
           <Text style={[styles.infoText, { fontSize: getAdjustedFontSize(13) }]}>
-            Показатели сахара вне этого диапазона вызовут предупреждение на главном экране дневника.
+            {t.targetRangeInfo}
           </Text>
         </View>
 
         <View style={styles.inputGroup}>
           <View style={styles.inputContainer}>
-            <Text style={[styles.label, { fontSize: getAdjustedFontSize(14) }]}>Минимум (ммоль/л)</Text>
+            <Text style={[styles.label, { fontSize: getAdjustedFontSize(14) }]}>{t.minimum}</Text>
             <TextInput
               style={[styles.input, { fontSize: getAdjustedFontSize(16) }]}
               keyboardType="numeric"
@@ -93,7 +122,7 @@ export default function SettingsScreen({ navigation }) {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={[styles.label, { fontSize: getAdjustedFontSize(14) }]}>Максимум (ммоль/л)</Text>
+            <Text style={[styles.label, { fontSize: getAdjustedFontSize(14) }]}>{t.maximum}</Text>
             <TextInput
               style={[styles.input, { fontSize: getAdjustedFontSize(16) }]}
               keyboardType="numeric"
@@ -108,7 +137,7 @@ export default function SettingsScreen({ navigation }) {
       {/* Font Size Settings */}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { fontSize: getAdjustedFontSize(18) }]}>
-          Размер шрифта
+          {t.fontSizeTitle}
         </Text>
         
         <View style={styles.stepperContainer}>
@@ -138,7 +167,7 @@ export default function SettingsScreen({ navigation }) {
         <TouchableOpacity style={styles.resetButton} onPress={handleResetFontSize}>
           <RotateCcw size={16} color="#666" style={styles.resetIcon} />
           <Text style={[styles.resetButtonText, { fontSize: getAdjustedFontSize(14) }]}>
-            Сбросить по умолчанию (16)
+            {t.resetFontSize}
           </Text>
         </TouchableOpacity>
       </View>
@@ -146,14 +175,14 @@ export default function SettingsScreen({ navigation }) {
       {/* Preview Section */}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { fontSize: getAdjustedFontSize(16) }]}>
-          Предварительный просмотр
+          {t.previewTitle}
         </Text>
         <View style={styles.previewBox}>
           <Text style={[styles.previewLabel, { fontSize: getAdjustedFontSize(14) }]}>
-            Сахар: <Text style={styles.previewValue}>5.4 ммоль/л</Text>
+            {t.previewSugar} <Text style={styles.previewValue}>5.4 {t.unit}</Text>
           </Text>
           <Text style={[styles.previewLabel, { fontSize: getAdjustedFontSize(14) }]}>
-            Питание: <Text style={styles.previewValue}>Завтрак: овсянка с ягодами</Text>
+            {t.previewFood} <Text style={styles.previewValue}>{t.previewFoodValue}</Text>
           </Text>
         </View>
       </View>
@@ -161,7 +190,7 @@ export default function SettingsScreen({ navigation }) {
       {/* Save Button */}
       <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
         <Text style={[styles.saveButtonText, { fontSize: getAdjustedFontSize(18) }]}>
-          Сохранить настройки
+          {t.saveSettings}
         </Text>
       </TouchableOpacity>
     </ScrollView>

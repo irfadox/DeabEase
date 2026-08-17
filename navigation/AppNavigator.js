@@ -4,6 +4,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { Book, Bell, MessageSquare, Users, Settings as SettingsIcon } from 'lucide-react-native';
 import { supabase } from '../utils/supabase';
+import { useLanguageContext } from '../context/LanguageContext';
+import LangAppNavigator from '../lang/LangAppNavigator';
+import LangCommon from '../lang/LangCommon';
 
 import DiaryScreen from '../screens/DiaryScreen';
 import SettingsScreen from '../screens/SettingsScreen';
@@ -16,6 +19,10 @@ import PatientListScreen from '../screens/PatientListScreen';
 const Tab = createBottomTabNavigator();
 
 export default function AppNavigator() {
+  const { language } = useLanguageContext();
+  const t = LangAppNavigator[language];
+  const common = LangCommon[language];
+
   const [session, setSession] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -35,7 +42,6 @@ export default function AppNavigator() {
       } catch (err) {
         console.error('AppNavigator: Auth initialization failed:', err.message);
         
-        // If we are stuck in a network loop with a session, clear it to rescue the app
         if (err.message?.includes('Network') && session) {
             console.warn('AppNavigator: Permanent network failure detected with active session. Clearing session.');
             await supabase.auth.signOut();
@@ -46,7 +52,6 @@ export default function AppNavigator() {
       }
     };
 
-    // Safety Timeout: Ensure app doesn't stay blank forever
     const safetyTimeout = setTimeout(() => {
       if (loading) {
         console.warn('AppNavigator: Safety timeout reached. Forcing render.');
@@ -91,7 +96,7 @@ export default function AppNavigator() {
             await supabase.from('profiles').insert([{
                 id: userId,
                 email: user.email,
-                full_name: user.user_metadata?.full_name || 'Неизвестный',
+                full_name: user.user_metadata?.full_name || common.unknown,
                 role: roleFallback,
                 phone_number: user.user_metadata?.phone_number || null,
                 affiliation: user.user_metadata?.affiliation || null,
@@ -114,7 +119,7 @@ export default function AppNavigator() {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8f9fa' }}>
         <ActivityIndicator size="large" color="#00BFA5" />
-        <Text style={{ marginTop: 12, color: '#666' }}>Подключение к CyberBloom...</Text>
+        <Text style={{ marginTop: 12, color: '#666' }}>{t.connecting}</Text>
       </View>
     );
   }
@@ -134,7 +139,7 @@ export default function AppNavigator() {
               name="Patients" 
               component={PatientListScreen} 
               options={{ 
-                title: 'Мои Пациенты',
+                title: t.myPatients,
                 tabBarIcon: ({ color, size }) => <Users size={size} color={color} />
               }} 
             />
@@ -154,10 +159,10 @@ export default function AppNavigator() {
               headerTitleStyle: { fontWeight: '600' },
             })}
           >
-            <Tab.Screen name="Diary" component={DiaryScreen} options={{ title: 'Дневник' }} />
-            <Tab.Screen name="Reminders" component={RemindersScreen} options={{ title: 'Напоминания' }} />
-            <Tab.Screen name="Chat" component={ChatScreen} options={{ title: 'Чат' }} />
-            <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: 'Настройки' }} />
+            <Tab.Screen name="Diary" component={DiaryScreen} options={{ title: t.diary }} />
+            <Tab.Screen name="Reminders" component={RemindersScreen} options={{ title: t.reminders }} />
+            <Tab.Screen name="Chat" component={ChatScreen} options={{ title: t.chat }} />
+            <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: t.settings }} />
           </Tab.Navigator>
         )
       ) : (

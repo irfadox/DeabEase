@@ -3,9 +3,16 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, 
 import { supabase } from '../utils/supabase';
 import { User, MessageSquare, Phone } from 'lucide-react-native';
 import { useSettings } from '../context/SettingsContext';
+import { useLanguageContext } from '../context/LanguageContext';
+import LangPatientListScreen from '../lang/LangPatientListScreen';
+import LangCommon from '../lang/LangCommon';
 
 export default function PatientListScreen({ navigation }) {
   const { getAdjustedFontSize } = useSettings();
+  const { language } = useLanguageContext();
+  const t = LangPatientListScreen[language];
+  const common = LangCommon[language];
+
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,7 +24,6 @@ export default function PatientListScreen({ navigation }) {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Fetch patients where assigned_doctor_id matches current doctor
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -27,7 +33,7 @@ export default function PatientListScreen({ navigation }) {
       setPatients(data || []);
     } catch (e) {
       console.error('Error fetching patients:', e);
-      Alert.alert('Ошибка', 'Не удалось загрузить список пациентов');
+      Alert.alert(common.error, t.errorLoadFailed);
     } finally {
       setLoading(false);
     }
@@ -43,7 +49,7 @@ export default function PatientListScreen({ navigation }) {
       </View>
       <View style={styles.info}>
         <Text style={[styles.name, { fontSize: getAdjustedFontSize(16) }]}>{item.full_name}</Text>
-        <Text style={[styles.details, { fontSize: getAdjustedFontSize(13) }]}>{item.description || 'Нет описания'}</Text>
+        <Text style={[styles.details, { fontSize: getAdjustedFontSize(13) }]}>{item.description || t.noDescription}</Text>
       </View>
       <MessageSquare color="#00BFA5" size={20} />
     </TouchableOpacity>
@@ -60,7 +66,7 @@ export default function PatientListScreen({ navigation }) {
           keyExtractor={item => item.id}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
-            <Text style={[styles.emptyText, { fontSize: getAdjustedFontSize(16) }]}>У вас пока нет назначенных пациентов</Text>
+            <Text style={[styles.emptyText, { fontSize: getAdjustedFontSize(16) }]}>{t.emptyList}</Text>
           }
           refreshing={loading}
           onRefresh={fetchPatients}

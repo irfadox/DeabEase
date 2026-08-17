@@ -3,18 +3,25 @@ import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Keyboard
 import { Bot, Send, Sparkles } from 'lucide-react-native';
 import { getLogs } from '../utils/storage';
 import { useSettings } from '../context/SettingsContext';
+import { useLanguageContext } from '../context/LanguageContext';
+import LangAIScreen from '../lang/LangAIScreen';
 
 export default function AIScreen() {
   const { getAdjustedFontSize } = useSettings();
-  const [messages, setMessages] = useState([
-    { id: '1', text: 'Привет! Я ваш ИИ-ассистент. Я могу проанализировать ваши показатели или ответить на вопросы о диабете. Как я могу помочь?', sender: 'ai' }
-  ]);
+  const { language } = useLanguageContext();
+  const t = LangAIScreen[language];
+
+  const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const flatListRef = useRef();
 
+  useEffect(() => {
+    setMessages([
+      { id: '1', text: t.welcomeMessage, sender: 'ai' }
+    ]);
+  }, [language]);
+
   const polishAIResponse = (text) => {
-    // Remove common AI "strange symbols" and markdown formatting if requested
-    // Stripping markdown like **text**, ### title, and code blocks
     return text
       .replace(/\*\*/g, '')
       .replace(/###/g, '')
@@ -36,18 +43,15 @@ export default function AIScreen() {
     setMessages(prev => [...prev, userMsg]);
     setInputText('');
 
-    // Prepare context from logs
     const logs = await getLogs();
     const recentLogsContext = logs.slice(0, 5).map(l => 
-        `Дата: ${new Date(l.timestamp).toLocaleDateString()}, Сахар: ${l.sugar_level}, Примечание: ${l.notes}`
+        t.logContextLine
+          .replace('{date}', new Date(l.timestamp).toLocaleDateString())
+          .replace('{sugar}', l.sugar_level)
+          .replace('{notes}', l.notes)
     ).join('\n');
 
-    const systemPrompt = `Ты - медицинский ИИ-ассистент CyberBloom. 
-    Твоя задача: помогать пациентам с диабетом. 
-    Отвечай вежливо, кратко и на русском языке. 
-    Если пациент просит анализ, используй эти данные:\n${recentLogsContext}\n
-    ВАЖНО: Всегда напоминай, что ты - ИИ, и для серьезных решений нужно консультироваться с врачом.
-    Не используй символы разметки (решетки, звездочки).`;
+    const systemPrompt = t.systemPrompt.replace('{context}', recentLogsContext);
 
     try {
         const apiKey = process.env.EXPO_PUBLIC_OPENROUTER_API_KEY || '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';
@@ -83,7 +87,7 @@ export default function AIScreen() {
         console.error("AI Error:", error);
         const errorMsg = {
             id: (Date.now() + 1).toString(),
-            text: "Извините, произошла ошибка при связи с ИИ. Попробуйте позже.",
+            text: t.errorMessage,
             sender: 'ai',
         };
         setMessages(prev => [...prev, errorMsg]);
@@ -103,7 +107,7 @@ export default function AIScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Sparkles color="#6366f1" size={20} />
-        <Text style={[styles.headerSubtitle, { fontSize: getAdjustedFontSize(14) }]}>Персональный помощник</Text>
+        <Text style={[styles.headerSubtitle, { fontSize: getAdjustedFontSize(14) }]}>{t.headerSubtitle}</Text>
       </View>
       
       <FlatList
@@ -122,7 +126,7 @@ export default function AIScreen() {
         <View style={styles.inputContainer}>
           <TextInput
             style={[styles.input, { fontSize: getAdjustedFontSize(16) }]}
-            placeholder="Спросите что-нибудь..."
+            placeholder={t.inputPlaceholder}
             value={inputText}
             onChangeText={setInputText}
           />

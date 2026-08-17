@@ -5,6 +5,9 @@ import { Clock, Plus, Trash2, Calendar } from 'lucide-react-native';
 import { addReminder, getReminders, deleteReminder } from '../utils/storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useSettings } from '../context/SettingsContext';
+import { useLanguageContext } from '../context/LanguageContext';
+import LangRemindersScreen from '../lang/LangRemindersScreen';
+import LangCommon from '../lang/LangCommon';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -16,6 +19,10 @@ Notifications.setNotificationHandler({
 
 export default function RemindersScreen() {
   const { getAdjustedFontSize } = useSettings();
+  const { language } = useLanguageContext();
+  const t = LangRemindersScreen[language];
+  const common = LangCommon[language];
+
   const [reminders, setReminders] = useState([]);
   const [text, setText] = useState('');
   const [date, setDate] = useState(new Date());
@@ -31,7 +38,7 @@ export default function RemindersScreen() {
   const requestPermissions = async () => {
     const { status } = await Notifications.requestPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Ошибка', 'Разрешите уведомления для работы напоминаний');
+      Alert.alert(common.error, t.errorPermission);
     }
   };
 
@@ -41,7 +48,7 @@ export default function RemindersScreen() {
     const mapped = data.map(item => ({
         id: item.id.toString(),
         text: item.title,
-        time: item.time, // ISO string
+        time: item.time,
         enabled: !item.completed
     }));
     setReminders(mapped);
@@ -61,19 +68,18 @@ export default function RemindersScreen() {
 
   const handleAddReminder = async () => {
     if (!text) {
-      Alert.alert('Ошибка', 'Введите текст напоминания');
+      Alert.alert(common.error, t.errorEmptyText);
       return;
     }
 
     if (date < new Date()) {
-        Alert.alert('Ошибка', 'Время напоминания не может быть в прошлом');
+        Alert.alert(common.error, t.errorPastTime);
         return;
     }
 
-    // 1. Schedule local notification
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: 'CyberBloom Напоминание',
+        title: t.notificationTitle,
         body: text,
       },
       trigger: {
@@ -81,7 +87,6 @@ export default function RemindersScreen() {
       },
     });
 
-    // 2. Save to Supabase
     await addReminder({
         title: text,
         time: date.toISOString(),
@@ -95,13 +100,13 @@ export default function RemindersScreen() {
 
   const handleDelete = async (id) => {
     Alert.alert(
-      'Удаление', 'Вы действительно хотите удалить это напоминание?',
+      t.deleteTitle, t.deleteMessage,
       [
-        { text: 'Отмена', style: 'cancel' },
-        { text: 'Удалить', style: 'destructive', onPress: async () => {
+        { text: common.cancel, style: 'cancel' },
+        { text: common.delete, style: 'destructive', onPress: async () => {
             const success = await deleteReminder(id);
             if (success) loadReminders();
-            else Alert.alert('Ошибка', 'Не удалось удалить');
+            else Alert.alert(common.error, t.errorDeleteFailed);
         }}
       ]
     );
@@ -112,7 +117,7 @@ export default function RemindersScreen() {
       <View style={styles.inputCard}>
         <TextInput
           style={[styles.input, { fontSize: getAdjustedFontSize(16) }]}
-          placeholder="О чем напомнить?"
+          placeholder={t.placeholder}
           value={text}
           onChangeText={setText}
         />
@@ -142,7 +147,7 @@ export default function RemindersScreen() {
 
         <TouchableOpacity style={styles.addButton} onPress={handleAddReminder}>
           <Plus color="white" size={24} />
-          <Text style={[styles.addButtonText, { fontSize: getAdjustedFontSize(18) }]}>Добавить напоминание</Text>
+          <Text style={[styles.addButtonText, { fontSize: getAdjustedFontSize(18) }]}>{t.addReminder}</Text>
         </TouchableOpacity>
       </View>
 
@@ -167,8 +172,8 @@ export default function RemindersScreen() {
             </TouchableOpacity>
           </View>
         )}
-        ListHeaderComponent={<Text style={[styles.listTitle, { fontSize: getAdjustedFontSize(18) }]}>Ваши напоминания</Text>}
-        ListEmptyComponent={<Text style={[styles.emptyText, { fontSize: getAdjustedFontSize(16) }]}>Напоминаний пока нет</Text>}
+        ListHeaderComponent={<Text style={[styles.listTitle, { fontSize: getAdjustedFontSize(18) }]}>{t.listTitle}</Text>}
+        ListEmptyComponent={<Text style={[styles.emptyText, { fontSize: getAdjustedFontSize(16) }]}>{t.emptyList}</Text>}
         contentContainerStyle={styles.list}
         refreshing={loading}
         onRefresh={loadReminders}

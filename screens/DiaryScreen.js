@@ -6,6 +6,11 @@ import * as Sharing from 'expo-sharing';
 import { supabase } from '../utils/supabase';
 import { useIsFocused } from '@react-navigation/native';
 import { useSettings } from '../context/SettingsContext';
+import { useLanguageContext } from '../context/LanguageContext';
+import LangDiaryScreen, { getStatusLabel } from '../lang/LangDiaryScreen';
+import LangCommon from '../lang/LangCommon';
+
+const LOCALE_MAP = { ru: 'ru-RU', en: 'en-US', ky: 'ky-KG' };
 
 export default function DiaryScreen() {
   const [logs, setLogs] = useState([]);
@@ -15,6 +20,10 @@ export default function DiaryScreen() {
   const [userProfile, setUserProfile] = useState(null);
 
   const { minLimit, maxLimit, getAdjustedFontSize } = useSettings();
+  const { language } = useLanguageContext();
+  const t = LangDiaryScreen[language];
+  const common = LangCommon[language];
+  const locale = LOCALE_MAP[language] || 'ru-RU';
   const isFocused = useIsFocused();
 
   useEffect(() => {
@@ -39,15 +48,15 @@ export default function DiaryScreen() {
 
   const handleAddLog = async () => {
     if (!sugar && !food) {
-      Alert.alert('Ошибка', 'Пожалуйста, введите данные');
+      Alert.alert(common.error, t.errorEmpty);
       return;
     }
 
     const value = parseFloat(sugar);
-    let status = 'Норма';
+    let status = 'normal';
     if (!isNaN(value)) {
-      if (value < minLimit) status = 'Низкий';
-      if (value > maxLimit) status = 'Высокий';
+      if (value < minLimit) status = 'low';
+      if (value > maxLimit) status = 'high';
     }
 
     const newLogData = {
@@ -63,32 +72,37 @@ export default function DiaryScreen() {
         setSugar('');
         setFood('');
     } else {
-        Alert.alert('Ошибка', 'Не удалось сохранить запись.');
+        Alert.alert(common.error, t.errorSaveFailed);
     }
     setLoading(false);
   };
 
   const handleShare = async () => {
     if (logs.length === 0) {
-      Alert.alert('Инфо', 'Нет данных для отправки');
+      Alert.alert(common.info, t.infoNoData);
       return;
     }
 
     if (!userProfile?.assigned_doctor_id) {
-        Alert.alert('Внимание', 'Сначала выберите лечащего врача в разделе "Чат"');
+        Alert.alert(common.attention, t.attentionSelectDoctor);
         return;
     }
 
     Alert.alert(
-        'Отправка отчета',
-        'Отправить текущий отчет за дневник вашему лечащему врачу?',
+        t.shareReportTitle,
+        t.shareReportMessage,
         [
-            { text: 'Отмена', style: 'cancel' },
+            { text: common.cancel, style: 'cancel' },
             { 
-              text: 'Отправить', 
+              text: common.send, 
               onPress: async () => {
-                const report = `📋 КЛИНИЧЕСКИЙ ОТЧЕТ (${new Date().toLocaleDateString()})\n` + 
-                    logs.map(l => `• ${new Date(l.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}: Сахар ${l.sugar_level}, ${l.notes}`).join('\n');
+                const reportDate = new Date().toLocaleDateString(locale);
+                const report = t.reportHeader.replace('{date}', reportDate) + '\n' + 
+                    logs.map(l => t.reportLine
+                      .replace('{time}', new Date(l.timestamp).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }))
+                      .replace('{sugar}', l.sugar_level)
+                      .replace('{notes}', l.notes)
+                    ).join('\n');
                 
                 const { error } = await supabase.from('messages').insert([{
                     sender_id: userProfile.id,
@@ -97,8 +111,8 @@ export default function DiaryScreen() {
                     is_system: true
                 }]);
 
-                if (error) Alert.alert('Ошибка', 'Не удалось отправить отчет');
-                else Alert.alert('Успех', 'Отчет успешно отправлен врачу через чат');
+                if (error) Alert.alert(common.error, t.errorShareFailed);
+                else Alert.alert(common.success, t.successShare);
               }
             }
         ]
@@ -107,16 +121,16 @@ export default function DiaryScreen() {
 
   const handleDeleteLog = (id) => {
     Alert.alert(
-      'Удаление',
-      'Вы действительно хотите удалить эту запись?',
+      t.deleteTitle,
+      t.deleteMessage,
       [
-        { text: 'Отмена', style: 'cancel' },
-        { text: 'Удалить', style: 'destructive', onPress: async () => {
+        { text: common.cancel, style: 'cancel' },
+        { text: common.delete, style: 'destructive', onPress: async () => {
             const success = await deleteLog(id);
             if (success) {
                 loadData();
             } else {
-                Alert.alert('Ошибка', 'Не удалось удалить запись.');
+                Alert.alert(common.error, t.errorDeleteFailed);
             }
         }}
       ]
@@ -134,9 +148,9 @@ export default function DiaryScreen() {
         <View style={styles.warningBanner}>
           <AlertTriangle color="#FF3B30" size={24} style={styles.warningIcon} />
           <View style={styles.warningTextContainer}>
-            <Text style={[styles.warningTitle, { fontSize: getAdjustedFontSize(15) }]}>Внимание! Сахар слишком низкий</Text>
+            <Text style={[styles.warningTitle, { fontSize: getAdjustedFontSize(15) }]}>{t.warningLowTitle}</Text>
             <Text style={[styles.warningSubtitle, { fontSize: getAdjustedFontSize(13) }]}>
-              Последний показатель сахара: {sugarVal} ммоль/л (ниже нормы {minLimit} ммоль/л)
+              {t.warningLowSubtitle.replace('{value}', sugarVal).replace('{min}', minLimit)}
             </Text>
           </View>
         </View>
@@ -148,9 +162,9 @@ export default function DiaryScreen() {
         <View style={styles.warningBanner}>
           <AlertTriangle color="#FF3B30" size={24} style={styles.warningIcon} />
           <View style={styles.warningTextContainer}>
-            <Text style={[styles.warningTitle, { fontSize: getAdjustedFontSize(15) }]}>Внимание! Сахар слишком высокий</Text>
+            <Text style={[styles.warningTitle, { fontSize: getAdjustedFontSize(15) }]}>{t.warningHighTitle}</Text>
             <Text style={[styles.warningSubtitle, { fontSize: getAdjustedFontSize(13) }]}>
-              Последний показатель сахара: {sugarVal} ммоль/л (выше нормы {maxLimit} ммоль/л)
+              {t.warningHighSubtitle.replace('{value}', sugarVal).replace('{max}', maxLimit)}
             </Text>
           </View>
         </View>
@@ -163,18 +177,18 @@ export default function DiaryScreen() {
   const renderItem = ({ item }) => (
     <View style={styles.logItem}>
       <View style={styles.logHeader}>
-        <Text style={[styles.timestamp, { fontSize: getAdjustedFontSize(14) }]}>{new Date(item.timestamp).toLocaleString('ru-RU')}</Text>
+        <Text style={[styles.timestamp, { fontSize: getAdjustedFontSize(14) }]}>{new Date(item.timestamp).toLocaleString(locale)}</Text>
         <View style={[styles.statusBadge, 
-          item.status === 'Низкий' ? styles.statusLow : 
-          item.status === 'Высокий' ? styles.statusHigh : styles.statusNormal]}>
-          <Text style={[styles.statusText, { fontSize: getAdjustedFontSize(12) }]}>{item.status}</Text>
+          getStatusLabel(item.status, t) === t.statusLow ? styles.statusLow : 
+          getStatusLabel(item.status, t) === t.statusHigh ? styles.statusHigh : styles.statusNormal]}>
+          <Text style={[styles.statusText, { fontSize: getAdjustedFontSize(12) }]}>{getStatusLabel(item.status, t)}</Text>
         </View>
         <TouchableOpacity onPress={() => handleDeleteLog(item.id)}>
           <Trash2 size={18} color="#FF3B30" />
         </TouchableOpacity>
       </View>
-      <Text style={[styles.logLabel, { fontSize: getAdjustedFontSize(16) }]}>Сахар: <Text style={[styles.logValue, { fontSize: getAdjustedFontSize(16) }]}>{item.sugar_level} ммоль/л</Text></Text>
-      <Text style={[styles.logLabel, { fontSize: getAdjustedFontSize(16) }]}>Питание: <Text style={[styles.logValue, { fontSize: getAdjustedFontSize(16) }]}>{item.notes}</Text></Text>
+      <Text style={[styles.logLabel, { fontSize: getAdjustedFontSize(16) }]}>{t.sugarLabel} <Text style={[styles.logValue, { fontSize: getAdjustedFontSize(16) }]}>{item.sugar_level} {t.unit}</Text></Text>
+      <Text style={[styles.logLabel, { fontSize: getAdjustedFontSize(16) }]}>{t.foodLabel} <Text style={[styles.logValue, { fontSize: getAdjustedFontSize(16) }]}>{item.notes}</Text></Text>
     </View>
   );
 
@@ -185,25 +199,25 @@ export default function DiaryScreen() {
       <View style={styles.inputSection}>
         <TextInput
           style={[styles.input, { fontSize: getAdjustedFontSize(16) }]}
-          placeholder="Сахар (ммоль/л)"
+          placeholder={t.sugarPlaceholder}
           keyboardType="numeric"
           value={sugar}
           onChangeText={setSugar}
         />
         <TextInput
           style={[styles.input, { fontSize: getAdjustedFontSize(16) }]}
-          placeholder="Что ели/пили?"
+          placeholder={t.foodPlaceholder}
           value={food}
           onChangeText={setFood}
         />
         <TouchableOpacity style={styles.addButton} onPress={handleAddLog}>
           <Plus color="white" size={24} />
-          <Text style={[styles.addButtonText, { fontSize: getAdjustedFontSize(18) }]}>Записать</Text>
+          <Text style={[styles.addButtonText, { fontSize: getAdjustedFontSize(18) }]}>{t.addEntry}</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.historyHeader}>
-        <Text style={[styles.title, { fontSize: getAdjustedFontSize(22) }]}>История</Text>
+        <Text style={[styles.title, { fontSize: getAdjustedFontSize(22) }]}>{t.history}</Text>
         <TouchableOpacity onPress={handleShare}>
           <Share2 color="#00BFA5" size={24} />
         </TouchableOpacity>
@@ -214,7 +228,7 @@ export default function DiaryScreen() {
         renderItem={renderItem}
         keyExtractor={item => item.id.toString()}
         contentContainerStyle={styles.list}
-        ListEmptyComponent={<Text style={[styles.emptyText, { fontSize: getAdjustedFontSize(16) }]}>Записей пока нет</Text>}
+        ListEmptyComponent={<Text style={[styles.emptyText, { fontSize: getAdjustedFontSize(16) }]}>{t.emptyList}</Text>}
       />
     </View>
   );

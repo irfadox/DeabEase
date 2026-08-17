@@ -4,9 +4,16 @@ import { Send, Phone, AlertTriangle, User } from 'lucide-react-native';
 import { supabase } from '../utils/supabase';
 import DoctorSelection from '../components/DoctorSelection';
 import { useSettings } from '../context/SettingsContext';
+import { useLanguageContext } from '../context/LanguageContext';
+import LangChatScreen from '../lang/LangChatScreen';
+import LangCommon from '../lang/LangCommon';
 
 export default function ChatScreen({ route }) {
   const { getAdjustedFontSize } = useSettings();
+  const { language } = useLanguageContext();
+  const t = LangChatScreen[language];
+  const common = LangCommon[language];
+
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(true);
@@ -14,7 +21,6 @@ export default function ChatScreen({ route }) {
   const [partnerProfile, setPartnerProfile] = useState(null);
   const flatListRef = useRef();
 
-  // If doctor, patientId comes from route params. If patient, assigned_doctor_id comes from profile.
   const targetId = route.params?.patientId || userProfile?.assigned_doctor_id;
 
   useEffect(() => {
@@ -25,7 +31,6 @@ export default function ChatScreen({ route }) {
     if (targetId) {
         fetchPartnerProfile();
         loadHistory();
-        // Subscribe to real-time messages
         const channel = supabase
             .channel('chat_messages')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
@@ -66,7 +71,7 @@ export default function ChatScreen({ route }) {
   const handleSend = async (isSOS = false) => {
     if (!inputText.trim() && !isSOS) return;
 
-    const text = isSOS ? '🚨 СИГНАЛ SOS! ПАЦИЕНТУ ТРЕБУЕТСЯ СРОЧНАЯ ПОМОЩЬ!' : inputText.trim();
+    const text = isSOS ? t.sosMessage : inputText.trim();
     if (!isSOS) setInputText('');
 
     const { error } = await supabase.from('messages').insert([{
@@ -76,25 +81,25 @@ export default function ChatScreen({ route }) {
         is_sos: isSOS
     }]);
 
-    if (error) Alert.alert('Ошибка', 'Не удалось отправить сообщение');
-    loadHistory(); // Fallback if realtime subscription is slow
+    if (error) Alert.alert(common.error, t.errorSendFailed);
+    loadHistory();
   };
 
   const handleCall = () => {
     if (!partnerProfile?.phone_number) {
-        Alert.alert('Информация', 'Номер телефона не указан');
+        Alert.alert(common.info, t.infoNoPhone);
         return;
     }
     Alert.alert(
-        'Связаться по телефону',
-        `Номер: ${partnerProfile.phone_number}`,
+        t.callTitle,
+        t.callNumber.replace('{phone}', partnerProfile.phone_number),
         [
-            { text: 'Отмена', style: 'cancel' },
-            { text: 'Набрать', onPress: async () => {
+            { text: common.cancel, style: 'cancel' },
+            { text: t.callDial, onPress: async () => {
                 try {
                     await Linking.openURL(`tel:${partnerProfile.phone_number}`);
                 } catch (err) {
-                    Alert.alert('Ошибка', 'Не удалось совершить звонок');
+                    Alert.alert(common.error, t.errorCallFailed);
                 }
             }}
         ]
@@ -127,8 +132,8 @@ export default function ChatScreen({ route }) {
       <View style={styles.chatHeader}>
         <User color="#00BFA5" size={24} />
         <View style={styles.headerInfo}>
-            <Text style={[styles.headerName, { fontSize: getAdjustedFontSize(16) }]}>{partnerProfile?.full_name || 'Загрузка...'}</Text>
-            <Text style={[styles.headerStatus, { fontSize: getAdjustedFontSize(12) }]}>{userProfile?.role === 'doctor' ? 'Пациент' : 'Ваш врач'}</Text>
+            <Text style={[styles.headerName, { fontSize: getAdjustedFontSize(16) }]}>{partnerProfile?.full_name || t.loading}</Text>
+            <Text style={[styles.headerStatus, { fontSize: getAdjustedFontSize(12) }]}>{userProfile?.role === 'doctor' ? t.rolePatient : t.roleDoctor}</Text>
         </View>
         <TouchableOpacity style={styles.callIcon} onPress={handleCall}>
             <Phone color="#00BFA5" size={24} />
@@ -158,7 +163,7 @@ export default function ChatScreen({ route }) {
         <View style={styles.inputContainer}>
           <TextInput
             style={[styles.input, { fontSize: getAdjustedFontSize(16) }]}
-            placeholder="Введите сообщение..."
+            placeholder={t.messagePlaceholder}
             value={inputText}
             onChangeText={setInputText}
             multiline

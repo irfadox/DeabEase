@@ -14,24 +14,31 @@ import {
 import { supabase } from '../utils/supabase';
 import { User, Mail, Lock, Briefcase, FileText, ChevronRight } from 'lucide-react-native';
 import { useSettings } from '../context/SettingsContext';
+import { useLanguageContext, AVAILABLE_LANGUAGES } from '../context/LanguageContext';
+import LangAuthScreen from '../lang/LangAuthScreen';
+import LangCommon from '../lang/LangCommon';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 export default function AuthScreen() {
   const { getAdjustedFontSize } = useSettings();
+  const { language, setLanguage } = useLanguageContext();
+  const t = LangAuthScreen[language];
+  const common = LangCommon[language];
+
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   
-  // Form fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [role, setRole] = useState('patient'); // 'patient' or 'doctor'
+  const [role, setRole] = useState('patient');
   const [affiliation, setAffiliation] = useState('');
   const [description, setDescription] = useState('');
 
   const handleAuth = async () => {
     if (!email || !password) {
-      Alert.alert('Ошибка', 'Пожалуйста, заполните основные поля.');
+      Alert.alert(common.error, t.errorFillFields);
       return;
     }
 
@@ -45,9 +52,8 @@ export default function AuthScreen() {
         });
         if (error) throw error;
       } else {
-        // Signup
         if (!fullName || !phoneNumber) {
-          Alert.alert('Ошибка', 'Введите ФИО и номер телефона.');
+          Alert.alert(common.error, t.errorFillNamePhone);
           setLoading(false);
           return;
         }
@@ -68,7 +74,6 @@ export default function AuthScreen() {
         
         if (error) throw error;
 
-        // Manually create profile to ensure it exists regardless of SQL triggers
         if (authData?.user) {
            await supabase.from('profiles').upsert([{
                 id: authData.user.id,
@@ -81,10 +86,10 @@ export default function AuthScreen() {
            }]);
         }
 
-        Alert.alert('Успех', 'Аккаунт создан! Пожалуйста, проверьте почту (или просто войдите).');
+        Alert.alert(common.success, t.successAccountCreated);
       }
     } catch (error) {
-      Alert.alert('Ошибка авторизации', error.message);
+      Alert.alert(t.errorAuth, error.message);
     } finally {
       setLoading(false);
     }
@@ -100,10 +105,20 @@ export default function AuthScreen() {
           <View style={styles.logoContainer}>
             <Text style={styles.logoText}>CB</Text>
           </View>
-          <Text style={[styles.title, { fontSize: getAdjustedFontSize(28) }]}>{isLogin ? 'С возвращением' : 'Создайте аккаунт'}</Text>
+          <Text style={[styles.title, { fontSize: getAdjustedFontSize(28) }]}>{isLogin ? t.welcomeBack : t.createAccount}</Text>
           <Text style={[styles.subtitle, { fontSize: getAdjustedFontSize(16) }]}>
-            {isLogin ? 'Войдите в систему CyberBloom' : 'Начните заботу о здоровье прямо сейчас'}
+            {isLogin ? t.loginSubtitle : t.signupSubtitle}
           </Text>
+        </View>
+
+        <View style={styles.languageSection}>
+          <Text style={[styles.languageLabel, { fontSize: getAdjustedFontSize(14) }]}>{t.languageTitle}</Text>
+          <LanguageSwitcher
+            languages={AVAILABLE_LANGUAGES}
+            language={language}
+            onChange={setLanguage}
+            fontSize={getAdjustedFontSize(13)}
+          />
         </View>
 
         <View style={styles.form}>
@@ -111,7 +126,7 @@ export default function AuthScreen() {
             <Mail size={20} color="#00BFA5" style={styles.inputIcon} />
             <TextInput
               style={[styles.input, { fontSize: getAdjustedFontSize(16) }]}
-              placeholder="Email"
+              placeholder={t.emailPlaceholder}
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -123,7 +138,7 @@ export default function AuthScreen() {
             <Lock size={20} color="#00BFA5" style={styles.inputIcon} />
             <TextInput
               style={[styles.input, { fontSize: getAdjustedFontSize(16) }]}
-              placeholder="Пароль"
+              placeholder={t.passwordPlaceholder}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -136,7 +151,7 @@ export default function AuthScreen() {
                 <User size={20} color="#00BFA5" style={styles.inputIcon} />
                 <TextInput
                   style={[styles.input, { fontSize: getAdjustedFontSize(16) }]}
-                  placeholder="Полное имя (ФИО)"
+                  placeholder={t.fullNamePlaceholder}
                   value={fullName}
                   onChangeText={setFullName}
                 />
@@ -146,7 +161,7 @@ export default function AuthScreen() {
                 <Briefcase size={20} color="#00BFA5" style={styles.inputIcon} />
                 <TextInput
                   style={[styles.input, { fontSize: getAdjustedFontSize(16) }]}
-                  placeholder="Номер телефона"
+                  placeholder={t.phonePlaceholder}
                   value={phoneNumber}
                   onChangeText={setPhoneNumber}
                   keyboardType="phone-pad"
@@ -154,19 +169,19 @@ export default function AuthScreen() {
               </View>
 
               <View style={styles.roleContainer}>
-                <Text style={[styles.label, { fontSize: getAdjustedFontSize(14) }]}>Вы регистрируетесь как:</Text>
+                <Text style={[styles.label, { fontSize: getAdjustedFontSize(14) }]}>{t.registerAs}</Text>
                 <View style={styles.roleButtons}>
                   <TouchableOpacity
                     style={[styles.roleButton, role === 'patient' && styles.roleButtonActive]}
                     onPress={() => setRole('patient')}
                   >
-                    <Text style={[styles.roleButtonText, role === 'patient' && styles.roleButtonTextActive, { fontSize: getAdjustedFontSize(14) }]}>Пациент</Text>
+                    <Text style={[styles.roleButtonText, role === 'patient' && styles.roleButtonTextActive, { fontSize: getAdjustedFontSize(14) }]}>{t.patient}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.roleButton, role === 'doctor' && styles.roleButtonActive]}
                     onPress={() => setRole('doctor')}
                   >
-                    <Text style={[styles.roleButtonText, role === 'doctor' && styles.roleButtonTextActive, { fontSize: getAdjustedFontSize(14) }]}>Врач</Text>
+                    <Text style={[styles.roleButtonText, role === 'doctor' && styles.roleButtonTextActive, { fontSize: getAdjustedFontSize(14) }]}>{t.doctor}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -176,7 +191,7 @@ export default function AuthScreen() {
                   <Briefcase size={20} color="#00BFA5" style={styles.inputIcon} />
                   <TextInput
                     style={[styles.input, { fontSize: getAdjustedFontSize(16) }]}
-                    placeholder="Место работы / Специализация"
+                    placeholder={t.affiliationPlaceholder}
                     value={affiliation}
                     onChangeText={setAffiliation}
                   />
@@ -187,7 +202,7 @@ export default function AuthScreen() {
                 <FileText size={20} color="#00BFA5" style={[styles.inputIcon, { marginTop: 12 }]} />
                 <TextInput
                   style={[styles.input, styles.textArea, { fontSize: getAdjustedFontSize(16) }]}
-                  placeholder={role === 'doctor' ? 'О себе / Квалификация' : 'Особенности заболевания / Примечания'}
+                  placeholder={role === 'doctor' ? t.doctorDescPlaceholder : t.patientDescPlaceholder}
                   value={description}
                   onChangeText={setDescription}
                   multiline
@@ -206,7 +221,7 @@ export default function AuthScreen() {
               <ActivityIndicator color="white" />
             ) : (
               <>
-                <Text style={[styles.authButtonText, { fontSize: getAdjustedFontSize(18) }]}>{isLogin ? 'Войти' : 'Зарегистрироваться'}</Text>
+                <Text style={[styles.authButtonText, { fontSize: getAdjustedFontSize(18) }]}>{isLogin ? t.login : t.signup}</Text>
                 <ChevronRight size={20} color="white" />
               </>
             )}
@@ -217,7 +232,7 @@ export default function AuthScreen() {
             onPress={() => setIsLogin(!isLogin)}
           >
             <Text style={[styles.switchText, { fontSize: getAdjustedFontSize(14) }]}>
-              {isLogin ? 'Нет аккаунта? Зарегистрируйтесь' : 'Уже есть аккаунт? Войдите'}
+              {isLogin ? t.noAccount : t.hasAccount}
             </Text>
           </TouchableOpacity>
         </View>
@@ -268,6 +283,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
+  },
+  languageSection: {
+    marginBottom: 24,
+    paddingHorizontal: 4,
+  },
+  languageLabel: {
+    color: '#666',
+    marginBottom: 10,
+    textAlign: 'center',
+    fontWeight: '500',
   },
   form: {
     width: '100%',
