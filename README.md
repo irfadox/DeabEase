@@ -1,65 +1,94 @@
-# CyberBloom - Интеллектуальное медицинское приложение
+![DiabEase banner](/assets/banner.png)
 
-CyberBloom — это мощное мобильное приложение для пациентов с диабетом и их врачей, обеспечивающее мониторинг показателей, напоминания о лечении и интеллектуальный анализ данных с помощью ИИ.
+# DiabEase
 
-## 🚀 Пошаговое руководство по созданию
+DiabEase is a mobile app designed to assist people with diabetes (and their doctors) in tracking health metrics, managing treatment, and staying connected. Patients can log blood sugar levels and meals, set medication reminders, chat with their assigned doctor (including SOS alerts), and get personalized AI advice based on their recent diary data. Doctors can view their patients and communicate directly.
 
-Проект был реализован в несколько этапов, переходя от локального прототипа к полноценной облачной инфраструктуре.
+## About Diabetes Management
 
-### 1-й этап: Фундамент (React Native + Expo)
-- Инициализация проекта с использованием **Expo SDK**.
-- Разработка интерфейса на **React Native** с использованием **Lucide Icons** для современного медицинского дизайна.
-- Настройка навигации (**React Navigation**) с разделением на Дневник, Напоминания, Чат и ИИ-Ассистента.
+### Tracking and communication help people with diabetes stay in control of their condition.
 
-### 2-й этап: База данных и Авторизация (Supabase)
-- Интеграция **Supabase** в качестве backend-системы.
-- Реализация системы аутентификации (Email/Password) с разделением ролей: **Врач** и **Пациент**.
-- Создание реляционной базы данных для хранения:
-  - Профилей пользователей (ФИО, специализация, описание).
-  - Логов сахара и питания.
-  - Напоминаний.
-  - Сообщений чата.
+DiabEase provides a personal diary for readings and meals, scheduled reminders, and real-time chat with a doctor (plus an SOS button for urgent situations). The app supports both patients and doctors with role-based access.
 
-### 3-й этап: Интеллект (DeepSeek AI via OpenRouter)
-- Подключение API **OpenRouter** для доступа к модели **DeepSeek Chat**.
-- Реализация контекстного анализа: ИИ получает последние 5 записей из дневника пользователя для предоставления персонализированных советов.
-- Внедрение системы "очистки" (polishing) вывода ИИ для удаления технических символов и форматирования, делая ответы чистыми и читаемыми.
+## How It Works
 
-### 4-й этап: Мобильные функции
-- Настройка **Expo Notifications** для локальных напоминаний о приеме лекарств.
-- Реализация системы **SOS** для экстренной связи.
-- Подготовка конфигурации `app.json` для компиляции в **.apk**.
+### What each screen does
 
-## 🛠 Технологический стек
+- **AuthScreen.js**: Users create an account or sign in. Accounts are role-based (patient or doctor). Profile data (name, phone, affiliation, description) is stored in Supabase.
+- **DiaryScreen.js**: Patients log blood sugar values and meal notes. Entries are classified as low / normal / high based on user-defined limits. A warning banner appears for out-of-range values. Patients can share a report of recent logs with their assigned doctor via the chat system.
+- **RemindersScreen.js**: Users create timed reminders (medications, glucose checks, etc.). Local notifications are scheduled with Expo Notifications.
+- **ChatScreen.js**: Real-time messaging between a patient and their assigned doctor. Patients can select a doctor, send reports, place phone calls, or trigger an SOS message. Doctors see their patients and open chats.
+- **AIScreen.js** | Removed for safety (AI hallucination risk): An AI chat powered by DeepSeek (via OpenRouter). The model receives the user’s last 5 diary entries as context and returns polished, readable advice. Responses always emphasize consulting a real doctor.
+- **PatientListScreen.js**: Doctor-only view of assigned patients with quick access to their profiles and chats.
+- **SettingsScreen.js**: Adjust target blood-sugar range, font size, and interface language (Russian, English, Kyrgyz).
+- **AboutProjectScreen.js**: App description and overview of each section.
 
-- **Frontend**: React Native, Expo.
-- **Backend / DB**: Supabase (PostgreSQL).
-- **AI**: DeepSeek V3 (via OpenRouter).
-- **Icons**: Lucide React Native.
-- **Storage**: Expo SecureStore (для токенов) & Supabase (для данных).
+### Feedback & safety categories
 
-## 🤖 Как работает ИИ (DeepSeek)
+- **Low / Normal / High**: Automatic status based on the user’s configured min/max limits.
+- **Warnings**: Banner alerts when the latest reading falls outside the target range.
+- **SOS**: Special high-priority chat message for emergencies.
 
-Модель **DeepSeek-Chat** была выбрана за её высокую точность в логических задачах и медицине.
-1. **Контекст**: При каждом запросе в ИИ передается системный промпт и актуальные данные пользователя.
-2. **Очистка вывода**: Специальный алгоритм в `AIScreen.js` фильтрует markdown-символы (звездочки, решетки), обеспечивая чистоту текста.
-3. **Безопасность**: ИИ обучен давать советы осторожно, всегда рекомендуя консультацию с реальным врачом.
+## Tech Stack
 
-## 🌌 Роль Antigravity
+- **React Native** + **Expo** (SDK 51)
+- **React Navigation** (bottom tabs + native stack)
+- **Supabase** (PostgreSQL + Auth) for backend, profiles, logs, reminders, and messages
+- **Expo Notifications** for local reminders
+- **Expo SecureStore** for sensitive tokens
+- **Lucide React Native** for icons
+- **Multi-language support** (Russian, English, Kyrgyz) with a React Native adaptation of [react-language-switcher](https://github.com/aidartheklutz/react-language-switcher)
 
-Приложение CyberBloom было полностью разработано и доведено до финального состояния ИИ-ассистентом **Antigravity**, встроенным в вашу IDE.
-- **Анализ и исправление**: Antigravity исправил критические ошибки `AsyncStorage` и перевел приложение на современную облачную архитектуру.
-- **Написание кода**: От SQL-схем до сложных React-компонентов аутентификации.
-- **Интеграция**: Настройка связей между Supabase, Expo и DeepSeek.
-- **Полировка**: Перевод всех интерфейсов на русский язык и создание качественной документации.
+## Database Schema (Supabase)
 
----
+- **profiles** – users (patients & doctors), role, phone, assigned_doctor_id, affiliation, description
+- **logs** – sugar readings + notes + status + timestamp
+- **reminders** – title, time, type, completed flag
+- **messages** – chat messages with is_sos and is_system flags
 
-## 📲 Как собрать APK
+Run setup_database.sql in the Supabase SQL editor to create tables, the new-user trigger, and required columns.
 
-Для экспорта в `.apk` используйте систему **Expo Application Services (EAS)**:
+## Getting Started
 
-1. Установите EAS CLI: `npm install -g eas-cli`
-2. Авторизуйтесь: `eas login`
-3. Инициализируйте проект: `eas build:configure`
-4. Начните сборку APK: `eas build --platform android --profile preview` (убедитесь, что в `eas.json` настроен профиль с `buildType: apk`).
+1. Clone the repository:
+
+   ```
+   git clone https://github.com/irfadox/DeabEase.git
+   cd DeabEase
+   ```
+
+2. Install dependencies:
+
+   ```
+   npm install
+   ```
+
+3. Configure environment variables (copy .env.example to .env):
+
+   ```
+   EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
+   EXPO_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+   EXPO_PUBLIC_OPENROUTER_API_KEY=your_openrouter_key
+   ```
+
+4. Start the development server:
+   ```
+   npx expo start
+   ```
+
+## Building an APK
+
+Use Expo Application Services (EAS):
+
+```
+npm install -g eas-cli
+eas login
+eas build:configure
+eas build --platform android --profile preview
+```
+
+Make sure eas.json contains a profile with "buildType": "apk".
+
+## Disclaimer
+
+DiabEase is a lifestyle and monitoring tool. It does **not** provide medical advice, diagnosis, or treatment. Always consult a licensed healthcare professional before making changes to your diabetes management plan.
