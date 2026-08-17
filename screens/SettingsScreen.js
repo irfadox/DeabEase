@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { Plus, Minus, RotateCcw, Info } from 'lucide-react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, Image } from 'react-native';
+import { Plus, Minus, RotateCcw, Info, ChevronRight } from 'lucide-react-native';
 import { useSettings } from '../context/SettingsContext';
 import { useLanguageContext, AVAILABLE_LANGUAGES } from '../context/LanguageContext';
 import LangSettingsScreen from '../lang/LangSettingsScreen';
@@ -75,6 +75,24 @@ export default function SettingsScreen({ navigation }) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <TouchableOpacity
+        style={styles.aboutLink}
+        onPress={() => navigation.navigate('AboutProject')}
+      >
+        <View style={styles.aboutLinkContent}>
+          <Image source={require('../assets/icon.png')} style={styles.aboutIcon} />
+          <View style={styles.aboutLinkText}>
+            <Text style={[styles.aboutLinkTitle, { fontSize: getAdjustedFontSize(16) }]}>
+              {t.aboutProject}
+            </Text>
+            <Text style={[styles.aboutLinkSubtitle, { fontSize: getAdjustedFontSize(13) }]}>
+              {t.aboutProjectSubtitle}
+            </Text>
+          </View>
+        </View>
+        <ChevronRight size={20} color="#999" />
+      </TouchableOpacity>
+
       {/* Language Settings */}
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { fontSize: getAdjustedFontSize(18) }]}>
@@ -193,6 +211,8 @@ export default function SettingsScreen({ navigation }) {
           {t.saveSettings}
         </Text>
       </TouchableOpacity>
+
+      
     </ScrollView>
   );
 }
@@ -201,6 +221,39 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  aboutLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#eee',
+    marginBottom: 20,
+  },
+  aboutLinkContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  aboutIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    marginRight: 14,
+  },
+  aboutLinkText: {
+    flex: 1,
+  },
+  aboutLinkTitle: {
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 2,
+  },
+  aboutLinkSubtitle: {
+    color: '#888',
   },
   content: {
     padding: 20,

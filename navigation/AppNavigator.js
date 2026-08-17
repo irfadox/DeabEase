@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { Book, Bell, MessageSquare, Users, Settings as SettingsIcon } from 'lucide-react-native';
 import { supabase } from '../utils/supabase';
 import { useLanguageContext } from '../context/LanguageContext';
 import LangAppNavigator from '../lang/LangAppNavigator';
+import LangAboutProjectScreen from '../lang/LangAboutProjectScreen';
 import LangCommon from '../lang/LangCommon';
 
 import DiaryScreen from '../screens/DiaryScreen';
@@ -15,8 +17,10 @@ import ChatScreen from '../screens/ChatScreen';
 import AIScreen from '../screens/AIScreen';
 import AuthScreen from '../screens/AuthScreen';
 import PatientListScreen from '../screens/PatientListScreen';
+import AboutProjectScreen from '../screens/AboutProjectScreen';
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   const { language } = useLanguageContext();
@@ -124,49 +128,82 @@ export default function AppNavigator() {
     );
   }
 
+  const aboutScreenOptions = {
+    title: LangAboutProjectScreen[language].screenTitle,
+    headerStyle: { backgroundColor: '#f8f9fa' },
+    headerTitleStyle: { fontWeight: '600' },
+    headerTintColor: '#00BFA5',
+  };
+
+  const DoctorTabs = () => (
+    <Tab.Navigator
+      screenOptions={{
+        tabBarActiveTintColor: '#00BFA5',
+        tabBarInactiveTintColor: 'gray',
+        headerStyle: { backgroundColor: '#f8f9fa' },
+      }}
+    >
+      <Tab.Screen
+        name="Patients"
+        component={PatientListScreen}
+        options={{
+          title: t.myPatients,
+          tabBarIcon: ({ color, size }) => <Users size={size} color={color} />,
+        }}
+      />
+    </Tab.Navigator>
+  );
+
+  const PatientTabs = () => (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ color, size }) => {
+          if (route.name === 'Diary') return <Book size={size} color={color} />;
+          if (route.name === 'Reminders') return <Bell size={size} color={color} />;
+          if (route.name === 'Chat') return <MessageSquare size={size} color={color} />;
+          if (route.name === 'Settings') return <SettingsIcon size={size} color={color} />;
+        },
+        tabBarActiveTintColor: '#00BFA5',
+        tabBarInactiveTintColor: 'gray',
+        headerStyle: { backgroundColor: '#f8f9fa' },
+        headerTitleStyle: { fontWeight: '600' },
+      })}
+    >
+      <Tab.Screen name="Diary" component={DiaryScreen} options={{ title: t.diary }} />
+      <Tab.Screen name="Reminders" component={RemindersScreen} options={{ title: t.reminders }} />
+      <Tab.Screen name="Chat" component={ChatScreen} options={{ title: t.chat }} />
+      <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: t.settings }} />
+    </Tab.Navigator>
+  );
+
   return (
     <NavigationContainer>
       {session ? (
-        role === 'doctor' ? (
-          <Tab.Navigator
-            screenOptions={{
-              tabBarActiveTintColor: '#00BFA5',
-              tabBarInactiveTintColor: 'gray',
-              headerStyle: { backgroundColor: '#f8f9fa' },
-            }}
-          >
-            <Tab.Screen 
-              name="Patients" 
-              component={PatientListScreen} 
-              options={{ 
-                title: t.myPatients,
-                tabBarIcon: ({ color, size }) => <Users size={size} color={color} />
-              }} 
-            />
-          </Tab.Navigator>
-        ) : (
-          <Tab.Navigator
-            screenOptions={({ route }) => ({
-              tabBarIcon: ({ color, size }) => {
-                if (route.name === 'Diary') return <Book size={size} color={color} />;
-                if (route.name === 'Reminders') return <Bell size={size} color={color} />;
-                if (route.name === 'Chat') return <MessageSquare size={size} color={color} />;
-                if (route.name === 'Settings') return <SettingsIcon size={size} color={color} />;
-              },
-              tabBarActiveTintColor: '#00BFA5',
-              tabBarInactiveTintColor: 'gray',
-              headerStyle: { backgroundColor: '#f8f9fa' },
-              headerTitleStyle: { fontWeight: '600' },
-            })}
-          >
-            <Tab.Screen name="Diary" component={DiaryScreen} options={{ title: t.diary }} />
-            <Tab.Screen name="Reminders" component={RemindersScreen} options={{ title: t.reminders }} />
-            <Tab.Screen name="Chat" component={ChatScreen} options={{ title: t.chat }} />
-            <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: t.settings }} />
-          </Tab.Navigator>
-        )
+        <Stack.Navigator>
+          <Stack.Screen
+            name="Main"
+            component={role === 'doctor' ? DoctorTabs : PatientTabs}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="AboutProject"
+            component={AboutProjectScreen}
+            options={aboutScreenOptions}
+          />
+        </Stack.Navigator>
       ) : (
-        <AuthScreen />
+        <Stack.Navigator>
+          <Stack.Screen
+            name="Auth"
+            component={AuthScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="AboutProject"
+            component={AboutProjectScreen}
+            options={aboutScreenOptions}
+          />
+        </Stack.Navigator>
       )}
     </NavigationContainer>
   );

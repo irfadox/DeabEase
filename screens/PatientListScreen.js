@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { supabase } from '../utils/supabase';
-import { User, MessageSquare, Phone } from 'lucide-react-native';
+import { User, MessageSquare, Phone, Info } from 'lucide-react-native';
 import { useSettings } from '../context/SettingsContext';
 import { useLanguageContext } from '../context/LanguageContext';
 import LangPatientListScreen from '../lang/LangPatientListScreen';
@@ -18,7 +18,18 @@ export default function PatientListScreen({ navigation }) {
 
   useEffect(() => {
     fetchPatients();
-  }, []);
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('AboutProject')}
+          style={{ marginRight: 16 }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Info size={22} color="#00BFA5" />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, language]);
 
   const fetchPatients = async () => {
     try {
